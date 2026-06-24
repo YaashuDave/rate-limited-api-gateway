@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  service-a:
+    build:
+      context: ./mock-services/service-a
+    environment:
+      PORT: "8081"
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  service-b:
+    build:
+      context: ./mock-services/service-b
+    environment:
+      PORT: "8082"
+    ports:
+      - "8082:8082"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  gateway:
+    build:
+      context: .
+    ports:
+      - "8080:8080"
+    environment:
+      REDIS_ADDR: "redis:6379"
+      LISTEN_ADDR: ":8080"
+      SERVICE_A_BACKENDS: "http://service-a:8081"
+      SERVICE_B_BACKENDS: "http://service-b:8082"
+      # Set this to enable the AI control plane agent.
+      # Leave blank to run the gateway without it (zero cost).
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+    depends_on:
+      redis:
+        condition: service_healthy
+      service-a:
+        condition: service_healthy
+      service-b:
+        condition: service_healthy

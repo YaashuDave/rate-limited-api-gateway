@@ -1,0 +1,19 @@
+# Binaries (compiled outputs, not source directories)
+*.exe
+*.out
+/gateway
+
+# Environment / secrets — never commit API keys
+.env
+.env.*
+*.key
+
+# Project documentation (kept local only)
+DOCS.md
+
+# Go build artifacts
+vendor/
+
+# OS
+.DS_Store
+Thumbs.db
